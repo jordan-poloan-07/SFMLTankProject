@@ -19,7 +19,8 @@ public:
 
 	virtual ~GameChar()
 	{
-		delete sprite;
+		if( sprite != NULL )
+			delete sprite;
 	}
 
 	float getCenterX() const
@@ -34,20 +35,20 @@ public:
 
 	Sprite* getSprite() const
 	{
-		return sprite;
+		return sprite->getSprite();
 	}
 
 	virtual void update() = 0;
 
 protected:
 	float centerX, centerY, dX, dY;
-	Sprite* sprite;
+	SpriteImpl* sprite;
 };
 
 class Rocket : public GameChar
 {
 public:
-	Rocket(Sprite* sp, float centerX, float centerY, float theta)
+	Rocket(SpriteImpl* sp, float centerX, float centerY, float theta)
 	{
 		rocketRelease = 76.0f;
 
@@ -71,9 +72,9 @@ public:
 		return isVisible;
 	}
 
-	void setVisible(bool isVisible)
+	void setInvisible()
 	{
-		this->isVisible = isVisible;
+		this->isVisible = false;
 	}
 
 	void update()
@@ -83,7 +84,7 @@ public:
 
 		if (centerX < 0 || centerY > 0 ||centerX > 800 || centerY > 600 )
 		{
-			setVisible(false);
+			setInvisible();
 		}
 
 		sprite->setPosition(centerX, centerY);
@@ -98,7 +99,7 @@ private:
 class Tanks : public GameChar
 {
 public:
-	Tanks(Sprite* spbody, Sprite* spweap, Sprite* tankRocket, float x, float y) 
+	Tanks(SpriteImpl* spbody, SpriteImpl* spweap, SpriteImpl* tankRocket, float x, float y) 
 	{
 		this->sprite = spbody;
 		this->weapSpr = spweap;
@@ -122,7 +123,7 @@ public:
 
 	Sprite* getSprite2() const
 	{
-		return weapSpr;
+		return weapSpr->getSprite();
 	}
 
 	// can be changed
@@ -133,7 +134,7 @@ public:
 
 	void weaponShoot()
 	{
-		rockets.push_back(new Rocket(new Sprite(*tankRocket), centerX, centerY, weapTheta));
+		rockets.push_back(new Rocket(new SpriteImpl(*tankRocket), centerX, centerY, weapTheta));
 	}
 
 	void moveWeapCCW()
@@ -198,7 +199,7 @@ public:
 		else 
 			bodyTheta = 0;
 
-		cout << bodyTheta << " " << weapTheta << endl;
+		cout << rockets.size() << " " << endl;
 
 		centerX += dX;
 		centerY += dY;
@@ -213,12 +214,14 @@ public:
 		{
 			rockets[i]->update();
 		}
+
+		// remove not visible rockets here :
 	}
 
 private:
 	float bodyTheta, weapTheta, bThetaIncr, wThetaIncr;
-	Sprite* weapSpr; // the sprite inherited will be used for body sprite
-	Sprite* tankRocket;
+	SpriteImpl* weapSpr; // the sprite inherited will be used for body sprite
+	SpriteImpl* tankRocket;
 	vector<Rocket*> rockets;
 };
 

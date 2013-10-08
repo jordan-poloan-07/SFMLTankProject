@@ -3,6 +3,12 @@
 
 #include <SFML/Graphics.hpp>
 #include <math.h>
+#include <string>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+using namespace sf;
 
 namespace UtilMath
 {
@@ -17,17 +23,42 @@ class SpriteImpl
 public:
 	SpriteImpl(string filename, float xOrigin, float yOrigin)
 	{
-		Texture* t = new Texture(); // needs to deleted
+		t = new Texture(); // needs to deleted
 		t->loadFromFile(filename);
 
-		Sprite* s = new Sprite(*t);
+		s = new Sprite(*t);
 
 		s->setOrigin(xOrigin, yOrigin);
 	}
+
+	explicit SpriteImpl(const SpriteImpl& spriteImpl)
+	{
+		t = NULL;
+		s = new Sprite(*spriteImpl.getSprite());
+	}
+
 	~SpriteImpl()
 	{
-		delete t;
-		delete s;
+		if( t != NULL )
+		{
+			delete t;
+			t = NULL;
+		}
+		if( s != NULL )
+		{
+			delete s;
+			s = NULL;
+		}
+	}
+
+	void setPosition(float x, float y)
+	{
+		s->setPosition(x,y);
+	}
+
+	void setRotation(float theta)
+	{
+		s->setRotation(theta);
 	}
 
 	Sprite* getSprite() const

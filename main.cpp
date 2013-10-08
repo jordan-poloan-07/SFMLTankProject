@@ -1,25 +1,10 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
-#include <vector>
-#include <math.h>
 
 #include "Character.h"
 
 using namespace sf;
 using namespace std;
-
-// two pointers
-Sprite* createSprite(string filename, float xOrigin, float yOrigin)
-{
-	Texture* t = new Texture(); // needs to deleted
-	t->loadFromFile(filename);
-
-	Sprite* s = new Sprite(*t);
-
-	s->setOrigin(xOrigin, yOrigin);
-
-	return s;
-}
 
 int main()
 {
@@ -32,13 +17,9 @@ int main()
 	centerX = 200.0f;
 	centerY = 300.0f;
 
-	Sprite* tankBodySpr;
-	Sprite* tankWpnSpr; 
-	Sprite* tankRocket;
-
-	tankBodySpr = createSprite("tanks/tankbody_64_40.png", 64, 40);
-	tankWpnSpr = createSprite("tanks/tankwpn_18_21_76.png", 18, 21);
-	tankRocket = createSprite("tanks/rocket_13_12.png", 13, 12);
+	SpriteImpl* tankBodySpr = new SpriteImpl("tanks/tankbody_64_40.png", 64, 40);
+	SpriteImpl* tankWpnSpr = new SpriteImpl("tanks/tankwpn_18_21_76.png", 18, 21); 
+	SpriteImpl* tankRocket = new SpriteImpl("tanks/rocket_13_12.png", 13, 12);
 
 	Tanks tank(tankBodySpr, tankWpnSpr, tankRocket, centerX, centerY);
 
