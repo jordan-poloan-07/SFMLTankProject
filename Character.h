@@ -13,14 +13,12 @@ class GameChar
 public:
 	GameChar()
 	{
-		sprite = NULL;
 		centerX = centerY = dX = dY = 0.0f;
 	}
 
 	virtual ~GameChar()
 	{
-		if( sprite != NULL )
-			delete sprite;
+
 	}
 
 	float getCenterX() const
@@ -33,22 +31,16 @@ public:
 		return centerY;
 	}
 
-	Sprite* getSprite() const
-	{
-		return sprite->getSprite();
-	}
-
 	virtual void update() = 0;
 
 protected:
 	float centerX, centerY, dX, dY;
-	SpriteImpl* sprite;
 };
 
 class Rocket : public GameChar
 {
 public:
-	Rocket(SpriteImpl* sp, float centerX, float centerY, float theta)
+	Rocket(float centerX, float centerY, float theta)
 	{
 		rocketRelease = 76.0f;
 
@@ -57,7 +49,6 @@ public:
 		this->theta = theta;
 		this->isVisible = true;
 
-		this->sprite = sp;
 		this->dX = 5 * cosf(radianForm(theta));
 		this->dY = 5 * sinf(radianForm(theta));
 	}
@@ -87,8 +78,6 @@ public:
 			setInvisible();
 		}
 
-		sprite->setPosition(centerX, centerY);
-		sprite->setRotation(theta);
 	}
 
 private:
@@ -99,11 +88,8 @@ private:
 class Tanks : public GameChar
 {
 public:
-	Tanks(SpriteImpl* spbody, SpriteImpl* spweap, SpriteImpl* tankRocket, float x, float y) 
+	Tanks(float x, float y) 
 	{
-		this->sprite = spbody;
-		this->weapSpr = spweap;
-		this->tankRocket = tankRocket;
 
 		bodyTheta = weapTheta = bThetaIncr = wThetaIncr = 0.0f;
 
@@ -111,19 +97,14 @@ public:
 		centerY = y;
 	}
 
-	~Tanks()
+	float getBodyTheta() const
 	{
-		delete weapSpr;
-
-		for(unsigned int i = 0; i < rockets.size(); i++)
-		{
-			delete rockets[i];
-		}
+		return bodyTheta;
 	}
 
-	Sprite* getSprite2() const
+	float getWeapTheta() const
 	{
-		return weapSpr->getSprite();
+		return weapTheta;
 	}
 
 	// can be changed
@@ -134,7 +115,7 @@ public:
 
 	void weaponShoot()
 	{
-		rockets.push_back(new Rocket(new SpriteImpl(*tankRocket), centerX, centerY, weapTheta));
+		rockets.push_back(new Rocket(centerX, centerY, weapTheta));
 	}
 
 	void moveWeapCCW()
@@ -204,12 +185,6 @@ public:
 		centerX += dX;
 		centerY += dY;
 
-		this->sprite->setRotation(bodyTheta);
-		this->weapSpr->setRotation(weapTheta);
-
-		this->weapSpr->setPosition(centerX,centerY);
-		this->sprite->setPosition(centerX,centerY);
-
 		for(unsigned int i = 0; i < rockets.size(); i++)
 		{
 			rockets[i]->update();
@@ -220,8 +195,6 @@ public:
 
 private:
 	float bodyTheta, weapTheta, bThetaIncr, wThetaIncr;
-	SpriteImpl* weapSpr; // the sprite inherited will be used for body sprite
-	SpriteImpl* tankRocket;
 	vector<Rocket*> rockets;
 };
 
