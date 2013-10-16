@@ -6,7 +6,6 @@
 
 using namespace std;
 using namespace sf;
-using UtilMath::radianForm;
 
 class GameChar
 {
@@ -31,34 +30,17 @@ public:
 		return centerY;
 	}
 
-	virtual void update() = 0;
-
-protected:
-	float centerX, centerY, dX, dY;
-};
-
-class Rocket : public GameChar
-{
-public:
-	Rocket(float centerX, float centerY, float theta)
+	float getDx() const
 	{
-		rocketRelease = 76.0f;
-
-		this->centerX = centerX + rocketRelease * cosf(radianForm(theta));
-		this->centerY = centerY + rocketRelease * sinf(radianForm(theta));
-		this->theta = theta;
-		this->isVisible = true;
-
-		this->dX = 5 * cosf(radianForm(theta));
-		this->dY = 5 * sinf(radianForm(theta));
+		return dX;
 	}
 
-	float getTheta() const
+	float getDy() const
 	{
-		return theta;
+		return dY;
 	}
 
-	float getVisible() const
+	bool getVisible() const
 	{
 		return isVisible;
 	}
@@ -68,33 +50,142 @@ public:
 		this->isVisible = false;
 	}
 
+	virtual void update() = 0;
+	virtual FloatRect getBounds() const = 0;
+
+protected:
+	float centerX, centerY, dX, dY;	
+	bool isVisible;
+};
+
+class Rocket : public GameChar
+{
+public:
+	Rocket(Sprite sp, float centerX, float centerY, float theta)
+	{
+		cout << "Rocket Created" << endl;
+		float rocketRelease = 76.0f;
+
+		this->centerX = centerX + rocketRelease * cosf(radianForm(theta));
+		this->centerY = centerY + rocketRelease * sinf(radianForm(theta));
+		this->isVisible = true;
+
+		this->theta = theta;
+		this->dX = 5 * cosf(radianForm(theta));
+		this->dY = 5 * sinf(radianForm(theta));
+
+		this->rocketSprite = sp;
+	}
+
+	~Rocket()
+	{
+		cout <<"Rocket deleted"<<endl;
+	}
+
+	float getTheta() const
+	{
+		return theta;
+	}
+
+	Sprite getSprite() const
+	{
+		return rocketSprite;
+	}
+
+	FloatRect getBounds() const
+	{
+		return rocketSprite.getGlobalBounds();
+	}
+
 	void update()
 	{
 		centerX += dX;
 		centerY += dY;
 
-		if (centerX < 0 || centerY > 0 ||centerX > 800 || centerY > 600 )
+		if (centerX < 0 || centerY < 0 ||centerX > 800 || centerY > 600 )
 		{
 			setInvisible();
 		}
 
+		rocketSprite.setPosition(centerX,centerY);
+		rocketSprite.setRotation(theta);
+
 	}
 
 private:
-	bool isVisible;
-	float theta, rocketRelease;
+	float theta;
+	Sprite rocketSprite;
+};
+
+class Enemy : public GameChar 
+{
+public:
+	Enemy(float x, float y, float radius)
+	{
+		this->centerX = x;
+		this->centerY = y;
+
+		cs = CircleShape(radius);
+		cs.setOrigin(radius , radius);
+		cs.setFillColor(Color::Blue);
+		cs.setPosition(x,y);
+
+		dX = 2.0f;
+	}
+
+	CircleShape getSprite() const
+	{
+		return cs;
+	}
+
+	FloatRect getBounds() const 
+	{
+		return cs.getGlobalBounds();
+	}
+
+	void update()
+	{
+		if( centerX > 600 )
+		{
+			dX = -2.0f;
+		}
+		else if( centerX < 200 )
+		{
+			dX = 2.0f;
+		}
+
+		centerX += dX;
+
+		cs.setPosition(centerX,centerY);
+	}
+
+
+private:
+	CircleShape cs;
 };
 
 class Tanks : public GameChar
 {
 public:
-	Tanks(float x, float y) 
+	Tanks(Sprite sprite, Sprite sprite2, Texture rocketTexture, float x, float y) 
 	{
+		rockets = new vector<Rocket>;
 
 		bodyTheta = weapTheta = bThetaIncr = wThetaIncr = 0.0f;
 
 		centerX = x;
 		centerY = y;
+
+		this->sprite = new Sprite(sprite);
+		this->sprite2 = new Sprite(sprite2);
+		this->rocketTexture = rocketTexture;
+	}
+
+	~Tanks()
+	{
+		delete rockets;
+		delete sprite;
+		delete sprite2;
 	}
 
 	float getBodyTheta() const
@@ -108,14 +199,33 @@ public:
 	}
 
 	// can be changed
-	vector<Rocket*> getRockets()
+	vector<Rocket>* getRockets()
 	{
 		return rockets;
 	}
 
+
+	Sprite* getSprite() const
+	{
+		return sprite;
+	}
+
+	Sprite* getSprite2() const
+	{
+		return sprite2;
+	}
+
+	FloatRect getBounds() const
+	{
+		return sprite->getGlobalBounds();
+	}
+
 	void weaponShoot()
 	{
-		rockets.push_back(new Rocket(centerX, centerY, weapTheta));
+		Sprite sp;
+		sp.setTexture(rocketTexture);
+		sp.setOrigin(13,12);
+		rockets->push_back( Rocket(sp, centerX, centerY, weapTheta ) );
 	}
 
 	void moveWeapCCW()
@@ -180,22 +290,37 @@ public:
 		else 
 			bodyTheta = 0;
 
-		cout << rockets.size() << " " << endl;
+		cout << rockets->size() << " " << endl;
 
 		centerX += dX;
 		centerY += dY;
 
-		for(unsigned int i = 0; i < rockets.size(); i++)
+		sprite->setPosition(centerX,centerY);
+		sprite2->setPosition(centerX,centerY);
+
+		sprite->setRotation(bodyTheta);
+		sprite2->setRotation(weapTheta);
+
+		for(unsigned int i = 0; i < rockets->size(); i++)
 		{
-			rockets[i]->update();
+			(*rockets)[i].update();
 		}
 
-		// remove not visible rockets here :
+		if( rockets->size() >= 1 )
+		{
+			auto iter = remove_if(rockets->begin(), rockets->end(), []( const Rocket& r) { return ! r.getVisible(); } );
+			rockets->erase( iter, rockets->end() );
+		}
+
+
 	}
 
 private:
 	float bodyTheta, weapTheta, bThetaIncr, wThetaIncr;
-	vector<Rocket*> rockets;
+	vector<Rocket>* rockets;
+	Sprite* sprite;
+	Sprite* sprite2;
+	Texture rocketTexture;
 };
 
 #endif
